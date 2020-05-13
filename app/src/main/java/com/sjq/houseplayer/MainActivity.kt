@@ -37,6 +37,9 @@ class MainActivity : AppCompatActivity() {
 
             })
         }
+        decode_music.setOnClickListener() {
+            
+        }
 
         // Example of a call to a native method
 //        sample_text.text = stringFromJNI()

@@ -44,4 +44,6 @@ public class HousePlayer implements SurfaceHolder.Callback {
     }
 
     public native void nativeStart(String path, Surface surface);
+
+    public native void sound(String input,String output);
 }

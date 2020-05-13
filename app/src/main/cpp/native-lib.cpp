@@ -6,12 +6,18 @@
 
 
 extern "C"{
+    //封装格式
 #include <libavformat/avformat.h>
+//解码
 #include <libavcodec/avcodec.h>
+//
 #include <libavutil/avutil.h>
 #include <libavutil/imgutils.h>
+//缩放
 #include <libswscale/swscale.h>
 #include <unistd.h>
+//重采样
+#include <libswresample/swresample.h>
 
 }
 
@@ -135,5 +141,12 @@ SWS_SPLINE        0x400
     }
     LOGE("-----执行了end","end");
     env->ReleaseStringUTFChars(path_,path);
+
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_sjq_houseplayer_HousePlayer_sound(JNIEnv *env, jobject thiz, jstring input,
+                                           jstring output) {
 
 }

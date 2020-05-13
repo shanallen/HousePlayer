@@ -32,4 +32,13 @@
         android:layout_below="@+id/bt_play"
         android:layout_centerHorizontal="true"/>
 
+    <TextView
+        android:id="@+id/decode_music"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/sample_text"
+        android:layout_centerHorizontal="true"
+        android:text="解压音频"
+        />
+
 </RelativeLayout>
