@@ -146,7 +146,51 @@ SWS_SPLINE        0x400
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_sjq_houseplayer_HousePlayer_sound(JNIEnv *env, jobject thiz, jstring input,
-                                           jstring output) {
+Java_com_sjq_houseplayer_HousePlayer_sound(JNIEnv *env, jobject thiz, jstring input_,
+                                           jstring output_) {
+
+   const char *input = env->GetStringUTFChars(input_,0);
+   const char *ouput = env->GetStringUTFChars(output_,0);
+   avformat_network_init();
+    //总的Context
+    AVFormatContext *formatContext = avformat_alloc_context();
+    //打开音频文件
+    if(avformat_open_input(&formatContext,input,NULL,NULL) != 0){
+
+        LOGE("无法打开该文件");
+        return;
+    }
+    //获取输入文件信息
+    if(avformat_find_stream_info(formatContext,NULL) < 0){
+        LOGE("无法获取输入文件信息");
+        return;
+    }
+    //音频时长（单位：us 微秒  转换为s要除以1000000）
+    int audio_stream_idx= -1;
+    avformat_find_stream_info(formatContext,NULL);
+    LOGE("-----准备执行了音频流的遍历");
+    for (int i = 0; i < formatContext->nb_streams; ++i) {
+        if(formatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
+
+            audio_stream_idx = i;
+            break;
+        }
+    }
+    AVCodecParameters *codecpar = formatContext->streams[audio_stream_idx]->codecpar;
+    //解码器   h264  java 策略  key id
+    //context.getLayoutInflater()   hashmap
+
+    AVCodec *dec = avcodec_find_decoder(codecpar->codec_id);
+    //解码器的上下文 ffmpeg 1.0  4.0
+    AVCodecContext *codecContext = avcodec_alloc_context3(dec);
+    //将解码器参数copy到解码器上下文
+    avcodec_parameters_to_context(codecContext,codecpar);
+    //读取包 压缩数据
+    AVPacket *packet = av_packet_alloc();
+    int count = 0;
+    while(av_read_frame(formatContext,packet) >=0){
+
+        avcodec_send_packet(codecContext,packet);
+    }
 
 }
