@@ -185,12 +185,59 @@ Java_com_sjq_houseplayer_HousePlayer_sound(JNIEnv *env, jobject thiz, jstring in
     AVCodecContext *codecContext = avcodec_alloc_context3(dec);
     //将解码器参数copy到解码器上下文
     avcodec_parameters_to_context(codecContext,codecpar);
+    SwrContext *swrContext = swr_alloc();
+    //输入的这些参数
+
+    AVSampleFormat in_sample = codecContext->sample_fmt;
+    //输入采样率
+    int in_sample_rate = codecContext->sample_rate;
+    //输入声道布局
+    uint64_t in_ch_layout = codecContext->channel_layout;
+
+
+    //输出的参数 固定
+
+    //输出采样格式
+    AVSampleFormat out_sample = AV_SAMPLE_FMT_S16;
+    //输出采样
+
+    int out_sample_rate = 44100;
+    //输出声道布局
+    uint64_t out_ch_layout = AV_CH_LAYOUT_STEREO;
+    swr_alloc_set_opts(swrContext,out_ch_layout,out_sample,out_sample_rate,in_ch_layout,in_sample,in_sample_rate,0,NULL);
+    //初始化转换器其他的参数
+    swr_init(swrContext);
+    uint8_t *out_buffer = (uint8_t *)(av_malloc(2 * 44100));
+    FILE *fp_pcm = fopen(ouput,"wb");
+
+
     //读取包 压缩数据
     AVPacket *packet = av_packet_alloc();
     int count = 0;
     while(av_read_frame(formatContext,packet) >=0){
 
         avcodec_send_packet(codecContext,packet);
+        //解压缩数据 未压缩
+        AVFrame *frame = av_frame_alloc();
+        //c 指针
+        int ret = avcodec_receive_frame(codecContext,frame);
+        //frame
+        if(ret == AVERROR(EAGAIN)){
+            continue;
+        } else if(ret < 0){
+            LOGE("解码完成");
+            break;
+        }
+        if(packet->stream_index != audio_stream_idx){
+            continue;
+        }
+        LOGE("正在解码%d",count++);
+        //frame 喇叭  不可以
+        //mp3
+        swr_convert(swrContext,&out_buffer,2*44100,(const uint8_t**)frame->data,frame->nb_samples);
+
+
     }
+
 
 }
