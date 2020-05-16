@@ -148,26 +148,31 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_sjq_houseplayer_HousePlayer_sound(JNIEnv *env, jobject thiz, jstring input_,
                                            jstring output_) {
-
+    LOGE("-----准备执行了GetStringUTFChars","---");
    const char *input = env->GetStringUTFChars(input_,0);
    const char *ouput = env->GetStringUTFChars(output_,0);
+    LOGE("-----准备执行avformat_network_init","---");
    avformat_network_init();
+    LOGE("-----执行了avformat_network_init","---");
     //总的Context
     AVFormatContext *formatContext = avformat_alloc_context();
+    LOGE("-----执行了AVFormatContext","---");
     //打开音频文件
     if(avformat_open_input(&formatContext,input,NULL,NULL) != 0){
 
         LOGE("无法打开该文件");
         return;
     }
+    LOGE("-----执行了avformat_open_input","---");
     //获取输入文件信息
     if(avformat_find_stream_info(formatContext,NULL) < 0){
         LOGE("无法获取输入文件信息");
         return;
     }
+
     //音频时长（单位：us 微秒  转换为s要除以1000000）
     int audio_stream_idx= -1;
-    avformat_find_stream_info(formatContext,NULL);
+    LOGE("-----执行avformat_find_stream_info之后","---");
     LOGE("-----准备执行了音频流的遍历");
     for (int i = 0; i < formatContext->nb_streams; ++i) {
         if(formatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
@@ -185,6 +190,7 @@ Java_com_sjq_houseplayer_HousePlayer_sound(JNIEnv *env, jobject thiz, jstring in
     AVCodecContext *codecContext = avcodec_alloc_context3(dec);
     //将解码器参数copy到解码器上下文
     avcodec_parameters_to_context(codecContext,codecpar);
+    avcodec_open2(codecContext,dec,NULL);
     SwrContext *swrContext = swr_alloc();
     //输入的这些参数
 
@@ -221,6 +227,7 @@ Java_com_sjq_houseplayer_HousePlayer_sound(JNIEnv *env, jobject thiz, jstring in
         AVFrame *frame = av_frame_alloc();
         //c 指针
         int ret = avcodec_receive_frame(codecContext,frame);
+        LOGE("-----------%d",ret);
         //frame
         if(ret == AVERROR(EAGAIN)){
             continue;
@@ -235,9 +242,21 @@ Java_com_sjq_houseplayer_HousePlayer_sound(JNIEnv *env, jobject thiz, jstring in
         //frame 喇叭  不可以
         //mp3
         swr_convert(swrContext,&out_buffer,2*44100,(const uint8_t**)frame->data,frame->nb_samples);
+        int out_channel_nb = av_get_channel_layout_nb_channels(out_ch_layout);
 
-
+        //缓冲区的大小
+        int out_buffer_size = av_samples_get_buffer_size(NULL,out_channel_nb,frame->nb_samples,out_sample,1);
+        //字节 最小是1
+        fwrite(out_buffer,1,out_buffer_size,fp_pcm);
     }
+    LOGE("complete");
+    fclose(fp_pcm);
+    av_free(out_buffer);
+    swr_free(&swrContext);
+    avcodec_close(codecContext);
+    avformat_close_input(&formatContext);
+    env->ReleaseStringUTFChars(input_,input);
+    env->ReleaseStringUTFChars(output_,ouput);
 
 
 }

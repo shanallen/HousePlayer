@@ -38,7 +38,21 @@ class MainActivity : AppCompatActivity() {
             })
         }
         decode_music.setOnClickListener() {
-            
+            PermissionTool.getInstance().chekPermissions(this, arrayOf(
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE),object :PermissionTool.IPermissionsResult{
+                override fun passPermissons() {
+                    var input = File(Environment.getExternalStorageDirectory().absolutePath + "/input.mp3")
+                    var output = File(Environment.getExternalStorageDirectory().absolutePath + "/output.pcm")
+                    player?.sound(input.absolutePath,output.absolutePath)
+                }
+
+                override fun forbitPermissons() {
+                    Toast.makeText(this@MainActivity,"reject perssion apply", Toast.LENGTH_LONG).show()
+                }
+
+            })
+
         }
 
         // Example of a call to a native method
